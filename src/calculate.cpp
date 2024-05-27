@@ -2,7 +2,7 @@
 #include <random>
 #include <unistd.h>
 #include <starpu.h>
-#include "starpu_logger.h"
+#include "nntile_logger.h"
 
 void rand_time_cpu(void *buffers[], void *cl_arg)
 {
@@ -21,10 +21,16 @@ void rand_time_cpu(void *buffers[], void *cl_arg)
   std::cout << "val = " << val << std::endl;
 }
 
+struct starpu_perfmodel rand_time_pm = {
+    .type = STARPU_HISTORY_BASED,
+    .symbol = "rand_time",
+};
+
 struct starpu_codelet rand_time_cl = {
     .cpu_funcs = {rand_time_cpu},
     .nbuffers = 1,
     .modes = {STARPU_RW},
+    .model = &rand_time_pm,
 };
 
 int main()
@@ -43,16 +49,17 @@ int main()
     ret = starpu_task_insert(&rand_time_cl, STARPU_VALUE, &from, sizeof(from),
                              STARPU_VALUE, &to, sizeof(to),
                              STARPU_RW, sum_handle,
-                             STARPU_FLOPS, (double)2.111,
+                             STARPU_FLOPS, (double)150.111,
                              0);
     STARPU_CHECK_RETURN_VALUE(ret, "starpu_task_insert");
   }
   starpu_task_wait_for_all();
+  starpu_data_unregister(sum_handle);
   std::cout << "N = " << N << std::endl;
   std::cout << "from = " << from << std::endl;
   std::cout << "to = " << to << std::endl;
   std::cout << "sum = " << sum[0] << std::endl;
-  starpu_data_unregister(sum_handle);
+
   starpu_logger_shutdown();
   starpu_shutdown();
   return 0;

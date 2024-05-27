@@ -36,13 +36,13 @@ void starpu_logger_thread()
 	}
 }
 
-extern "C" void starpu_logger_init()
+void starpu_logger_init()
 {
 	logger_running = true;
 	logger_thread = std::thread(starpu_logger_thread);
 }
 
-extern "C" void starpu_logger_shutdown()
+void starpu_logger_shutdown()
 {
 	logger_running = false;
 	if (logger_thread.joinable())

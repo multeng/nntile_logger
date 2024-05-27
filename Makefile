@@ -1,4 +1,4 @@
-TARGET = starpu_logger
+TARGET = nntile_logger
 
 CC = g++
 STARPU_VERSION=1.4
