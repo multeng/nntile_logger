@@ -4,11 +4,13 @@
 #include <thread>
 #include <atomic>
 #include <unistd.h>
+#include <sys/socket.h>
+#include "websocket_client.hpp"
 
 std::thread logger_thread;
 std::atomic<bool> logger_running(true);
 
-void starpu_logger_thread()
+extern "C" void nntile_logger_thread()
 {
 	int workerid;
 	int worker_cnt = starpu_worker_get_count();
@@ -30,23 +32,30 @@ void starpu_logger_thread()
 			double flops = 0.0;
 			if (info.flops)
 				flops = info.flops;
-			std::cout << "Name: " << name << ", Total time: " << total_time << ", FLOPS: " << flops << std::endl;
+			char message[256];
+			snprintf(message, sizeof(message), "{\"name\": \"%s\", \"total_time\": \"%.2lf\", \"flops\": \"%.2lf\"}\n", name, total_time, flops);
+			if (send(client_socket, message, strlen(message), 0) != (ssize_t)strlen(message))
+			{
+				perror("send");
+			}
 		}
 		usleep(500000);
 	}
 }
 
-void starpu_logger_init()
+extern "C" void nntile_logger_init()
 {
 	logger_running = true;
-	logger_thread = std::thread(starpu_logger_thread);
+	websocket_connect();
+	logger_thread = std::thread(nntile_logger_thread);
 }
 
-void starpu_logger_shutdown()
+extern "C" void nntile_logger_shutdown()
 {
 	logger_running = false;
 	if (logger_thread.joinable())
 	{
 		logger_thread.join();
 	}
+	websocket_disconnect();
 }

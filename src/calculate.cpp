@@ -2,7 +2,7 @@
 #include <random>
 #include <unistd.h>
 #include <starpu.h>
-#include "nntile_logger.h"
+#include "nntile_logger.hpp"
 
 void rand_time_cpu(void *buffers[], void *cl_arg)
 {
@@ -37,13 +37,13 @@ int main()
 {
   int ret = starpu_init(NULL);
   STARPU_CHECK_RETURN_VALUE(ret, "starpu_init");
-  starpu_logger_init();
+  nntile_logger_init();
   float sum[1] = {0};
   // sum[0] = 0;
   starpu_data_handle_t sum_handle;
   starpu_vector_data_register(&sum_handle, STARPU_MAIN_RAM, (uintptr_t)sum, 1, sizeof(sum[0]));
   float from = 0.1, to = 0.3;
-  int N = 100;
+  int N = 10000;
   for (int i = 0; i < N; i++)
   {
     ret = starpu_task_insert(&rand_time_cl, STARPU_VALUE, &from, sizeof(from),
@@ -60,7 +60,7 @@ int main()
   std::cout << "to = " << to << std::endl;
   std::cout << "sum = " << sum[0] << std::endl;
 
-  starpu_logger_shutdown();
+  nntile_logger_shutdown();
   starpu_shutdown();
   return 0;
 }
