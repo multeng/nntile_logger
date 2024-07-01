@@ -39,11 +39,10 @@ int main()
   STARPU_CHECK_RETURN_VALUE(ret, "starpu_init");
   nntile_logger_init();
   float sum[1] = {0};
-  // sum[0] = 0;
   starpu_data_handle_t sum_handle;
   starpu_vector_data_register(&sum_handle, STARPU_MAIN_RAM, (uintptr_t)sum, 1, sizeof(sum[0]));
   float from = 0.1, to = 0.3;
-  int N = 10000;
+  int N = 50;
   for (int i = 0; i < N; i++)
   {
     ret = starpu_task_insert(&rand_time_cl, STARPU_VALUE, &from, sizeof(from),

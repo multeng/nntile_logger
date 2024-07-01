@@ -1,43 +1,76 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
 #include "websocket_client.hpp"
 
-#define SERVER_ADDR "127.0.0.1"
-#define SERVER_PORT 5001
-
-int client_socket = -1;
-
-extern "C" void websocket_connect()
+WebSocketClient::WebSocketClient() : m_open(false)
 {
-    struct sockaddr_in server;
+    m_client.init_asio();
+    m_client.set_access_channels(websocketpp::log::alevel::all);
+    m_client.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    m_client.set_open_handshake_timeout(5000);
+    m_client.set_open_handler(std::bind(&WebSocketClient::on_open, this, std::placeholders::_1));
+    m_client.set_close_handler(std::bind(&WebSocketClient::on_close, this, std::placeholders::_1));
+}
 
-    client_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_socket == -1)
+WebSocketClient::~WebSocketClient()
+{
+    close();
+    if (m_thread.joinable())
     {
-        perror("Socket creation failed");
-        exit(EXIT_FAILURE);
-    }
-
-    server.sin_family = AF_INET;
-    server.sin_port = htons(SERVER_PORT);
-    inet_pton(AF_INET, SERVER_ADDR, &server.sin_addr);
-
-    if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) < 0)
-    {
-        perror("Connection failed");
-        exit(EXIT_FAILURE);
+        m_thread.join();
     }
 }
 
-extern "C" void websocket_disconnect()
+void WebSocketClient::connect(const std::string &uri)
 {
-    if (client_socket != -1)
+    websocketpp::lib::error_code ec;
+    client::connection_ptr con = m_client.get_connection(uri, ec);
+
+    if (ec)
     {
-        close(client_socket);
-        client_socket = -1;
+        std::cout << "Could not create connection because: " << ec.message() << std::endl;
+        return;
     }
+
+    m_hdl = con->get_handle();
+    m_client.connect(con);
+
+    m_thread = std::thread([this]()
+                           { m_client.run(); });
+}
+
+void WebSocketClient::close()
+{
+    if (m_open)
+    {
+        websocketpp::lib::error_code ec;
+        m_client.close(m_hdl, websocketpp::close::status::going_away, "", ec);
+        if (ec)
+        {
+            std::cout << "Error initiating close: " << ec.message() << std::endl;
+        }
+    }
+}
+
+void WebSocketClient::send(const std::string &message)
+{
+    if (m_open)
+    {
+        websocketpp::lib::error_code ec;
+        m_client.send(m_hdl, message, websocketpp::frame::opcode::text, ec);
+        if (ec)
+        {
+            std::cout << "Send Error: " << ec.message() << std::endl;
+        }
+    }
+}
+
+void WebSocketClient::on_open(websocketpp::connection_hdl hdl)
+{
+    m_open = true;
+    std::cout << "Connection opened" << std::endl;
+}
+
+void WebSocketClient::on_close(websocketpp::connection_hdl hdl)
+{
+    m_open = false;
+    std::cout << "Connection closed" << std::endl;
 }

@@ -6,8 +6,8 @@ STARPU_VERSION=1.4
 WEBSOCKETPP_INCLUDE_DIR = /opt/homebrew/include/
 WEBSOCKETPP_LIB_DIR = /opt/homebrew/lib/
 
-CPPFLAGS = $(shell pkg-config --cflags starpu-$(STARPU_VERSION)) -I$(WEBSOCKETPP_INCLUDE_DIR)
-LDLIBS = $(shell pkg-config --libs starpu-$(STARPU_VERSION)) -L$(WEBSOCKETPP_LIB_DIR)
+CPPFLAGS = $(shell pkg-config --cflags starpu-$(STARPU_VERSION)) -I$(WEBSOCKETPP_INCLUDE_DIR) -std=c++11
+LDLIBS = $(shell pkg-config --libs starpu-$(STARPU_VERSION)) -L$(WEBSOCKETPP_LIB_DIR) -lboost_system -lssl -lcrypto
 
 SRC_DIR = ./src/
 OBJ_DIR = ./obj/

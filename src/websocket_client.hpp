@@ -1,18 +1,34 @@
-#ifndef WEBSOCKET_CLIENT_H
-#define WEBSOCKET_CLIENT_H
+#ifndef WEBSOCKET_CLIENT_HPP
+#define WEBSOCKET_CLIENT_HPP
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
 
-#include <stddef.h>
+#include <iostream>
+#include <string>
+#include <thread>
 
-void websocket_connect();
-extern int client_socket;
-void websocket_disconnect();
+class WebSocketClient
+{
+public:
+  WebSocketClient();
+  ~WebSocketClient();
 
-#ifdef __cplusplus
-}
-#endif
+  void connect(const std::string &uri);
+  void close();
+  void send(const std::string &message);
+
+private:
+  typedef websocketpp::client<websocketpp::config::asio_client> client;
+
+  client m_client;
+  websocketpp::connection_hdl m_hdl;
+  std::thread m_thread;
+  bool m_open;
+
+  void on_open(websocketpp::connection_hdl hdl);
+  void on_close(websocketpp::connection_hdl hdl);
+  void on_message(websocketpp::connection_hdl hdl, client::message_ptr msg);
+};
 
 #endif
