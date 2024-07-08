@@ -4,9 +4,6 @@
 #include <starpu.h>
 #include "nntile_logger.hpp"
 
-
-
-
 void acquire_callback(void *arg)
 {
     starpu_data_handle_t *sum_handle = (starpu_data_handle_t *)arg;
