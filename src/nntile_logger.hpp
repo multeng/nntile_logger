@@ -6,8 +6,8 @@ extern "C"
 {
 #endif
 
-  void nntile_logger_init();
-  void nntile_logger_shutdown();
+void nntile_logger_init();
+void nntile_logger_shutdown();
 
 #ifdef __cplusplus
 }

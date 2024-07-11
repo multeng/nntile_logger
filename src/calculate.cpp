@@ -4,18 +4,19 @@
 #include <starpu.h>
 #include "nntile_logger.hpp"
 
+
+#define SERVER_ADDR "127.0.0.1"
+#define SERVER_PORT 5001
+
 void acquire_callback(void *arg)
 {
     starpu_data_handle_t *sum_handle = (starpu_data_handle_t *)arg;
     float *sum_ptr = (float *)starpu_data_get_local_ptr(*sum_handle);
 
-    starpu_data_release(*sum_handle);
-
     char message[256];
     snprintf(message, sizeof(message), "{\"sum\": \"%f\"}\n", *sum_ptr);
+    starpu_data_release(*sum_handle);
     std::cout << "DATA : " << message << std::endl;
-
-    delete sum_handle;
 }
 
 
@@ -52,7 +53,7 @@ int main()
 {
   int ret = starpu_init(NULL);
   STARPU_CHECK_RETURN_VALUE(ret, "starpu_init");
-  // nntile_logger_init();
+  nntile_logger_init();
   float sum[1] = {0};
   starpu_data_handle_t sum_handle;
   starpu_vector_data_register(&sum_handle, STARPU_MAIN_RAM, (uintptr_t)sum, 1, sizeof(sum[0]));
@@ -66,9 +67,9 @@ int main()
                              STARPU_FLOPS, (double)150.111,
                              0);
     STARPU_CHECK_RETURN_VALUE(ret, "starpu_task_insert");
-    starpu_data_handle_t *sum_handle_copy = new starpu_data_handle_t;
-    *sum_handle_copy = sum_handle;
-    starpu_data_acquire_cb(sum_handle, STARPU_R, acquire_callback, sum_handle_copy);
+    // starpu_data_handle_t *sum_handle_copy = new starpu_data_handle_t;
+    // *sum_handle_copy = sum_handle;
+    // starpu_data_acquire_cb(sum_handle, STARPU_R, acquire_callback, sum_handle_copy);
   }
   starpu_task_wait_for_all();
   starpu_data_unregister(sum_handle);
@@ -77,7 +78,7 @@ int main()
   // std::cout << "to = " << to << std::endl;
   // std::cout << "sum = " << sum[0] << std::endl;
 
-  // nntile_logger_shutdown();
+  nntile_logger_shutdown();
   starpu_shutdown();
   return 0;
 }
